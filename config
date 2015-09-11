@@ -23,7 +23,7 @@ PRUNNING_PERIOD="7"
 ################################
 
 ### OTHER PARAMETERS ####
-MAILADM="rickasd@ig.com.br"
+MAILADM="mail@mailprovider.comr"
 LOGFILE="/var/log/backuplog.log"
 
 AdvPrint()
