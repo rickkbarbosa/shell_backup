@@ -1,0 +1,32 @@
+## Adv_Backup ConfigFile ###
+### Ricardo Barbosa - 20150910 ###
+
+BKP_STORAGE_DIR="/srv/backup/"
+BKP_FILENAME=$(hostname;)
+PRUNNING_PERIOD="7"
+### DIRECTORIES FOR BACKUP ### 
+        #APT Directories
+        FILE[0]=/etc/apt
+        #Apache Directories
+        FILE[1]=/etc/apache2
+        #Cronjobs
+        FILE[2]=/etc/cron*
+        FILE[3]=/var/spool/cron/crontabs
+        #Cojurp Files
+        FILE[4]=/mnt/cojurp
+
+### DATABASE BACKUP CONFIG ###
+#DBUSER=""
+#DBPASSWORD=""
+#DBNAMES=""
+#DBCOMPRESS=""
+################################
+
+### OTHER PARAMETERS ####
+MAILADM="rickasd@ig.com.br"
+LOGFILE="/var/log/backuplog.log"
+
+AdvPrint()
+{
+    echo "$(date '+[%m-%d-%Y %H:%M:%S]') - $*"
+}
