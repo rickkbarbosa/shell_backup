@@ -102,6 +102,8 @@ backup_seq() {
                                        /usr/bin/mysqldump -eq -u${DBUSER} -p${DBPASSWORD} \
                                                ${DBNAME} ${TBNAME} > ${TBNAME}.sql ;
                                        done ;
+                              #Stores DB Grant Too
+                              mysql -u${DBUSER} -p${DBPASSWORD} -N -e "SHOW GRANTS FOR ${DBNAME};" > ${DBNAME}_grants.mysql
                               cd ..
                 #echo Compressing...
                 case $DBCOMPRESS in
