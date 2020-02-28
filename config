@@ -1,30 +1,28 @@
 ## Adv_Backup ConfigFile ###
-### Ricardo Barbosa - 20150910 ###
+### Ricardo Barbosa - 20121217 ###
 
-BKP_STORAGE_DIR="/srv/backup/"
+BKP_STORAGE_DIR="/archive/backup/"
 BKP_FILENAME=$(hostname;)
-PRUNNING_PERIOD="7"
+PRUNNING_PERIOD="10"
 ### DIRECTORIES FOR BACKUP ### 
-        #APT Directories
-        FILE[0]=/etc/apt
-        #Apache Directories
-        FILE[1]=/etc/apache2
-        #Cronjobs
-        FILE[2]=/etc/cron*
-        FILE[3]=/var/spool/cron/crontabs
-        #Cojurp Files
-        FILE[4]=/mnt/cojurp
+	#Some Directories
+    FILE[1]=/etc/{apt,apache2,php,varnish}
+	#Another Directories
+    FILE[2]=/var/www/html
+	#Cronjobs
+	FILE[3]=/etc/cron*
+	FILE[4]=/var/spool/cron/crontabs
 
 ### DATABASE BACKUP CONFIG ###
-#DBUSER=""
-#DBPASSWORD=""
-#DBNAMES=""
-#DBCOMPRESS=""
+DBUSER="user"
+DBPASSWORD="S3cret"
+DBNAMES="dadtabase_name database2_name"
+DBCOMPRESS="gzip"
 ################################
 
 ### OTHER PARAMETERS ####
-MAILADM="mail@mailprovider.comr"
-LOGFILE="/var/log/backuplog.log"
+MAILADM="mail@some.com"
+LOGFILE="/var/log/your_backup.log"
 
 AdvPrint()
 {

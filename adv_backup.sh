@@ -3,28 +3,32 @@
 # IDENTIFICATION DIVISION
 #        ID SVN:   $Id$
 #          FILE:  adv_backup.sh
-#         USAGE:  ./config 
+#         USAGE:  $0 -d <diary> 
+#                     -w <weekly>
+#                     -m <monthly>
 #   DESCRIPTION:  Full Backup for Server Config Files
 #       OPTIONS:  ---
 #  REQUIREMENTS:  mail-utils (apt-get install mail-utils)
-#                 dateutils (apt-get install dateutils or yum install dateutils)
+#                 dateutils (apt/-get install dateutils or yum install dateutils)
+#                 config file
 #          BUGS:  ---
 #         NOTES:  ---
 #          TODO:  ---
-#        AUTHOR:  Ricardo Barbosa (Rickk Barbosa), rickasd@ig.com.br
+#        AUTHOR:  Ricardo Barbosa (Rickk Barbosa), github.com/rickkbarbosa
 #       COMPANY:  ---
 #       VERSION:  1.0
 #       CREATED:  13/02/2013 09:19:40 AM BRT
 #      REVISION:  11/09/2015 00:25:30 AM BRT 
 #===============================================================================
 
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 ### Fist steps
 DATE=`date +"%Y-%m-%d"`
-if [ ! -f config ]; then 
+if [ ! -f ${HERE}/config ]; then
         exit
 else
-        . config
+        . ${HERE}/config
 fi
 
 echo " " > $LOGFILE
@@ -32,13 +36,13 @@ exec 1> $LOGFILE
 
 
 #Functions
-usage() { 
+usage() {
     echo "Usage: $0 -dwm 
 
                   -d         Daily backup
                   -w         Weekly backup
                   -m         Monthly backup"
-     1>&2; exit 1; 
+     1>&2; exit 1;
 }
 
 make_backup_dir() {
@@ -47,7 +51,7 @@ make_backup_dir() {
       #WEEK_NUM=$(dateconv today -f '%c';)
       WEEK_NUM=$(dateutils.dconv today -f '%c';)
       YEAR=`date +"%Y"`
-      
+
       case ${1} in
                "Daily")
                       mkdir -p ${BKP_STORAGE_DIR}/Daily/${DATE}
@@ -71,23 +75,23 @@ make_backup_dir() {
 
 
 backup_seq() {
-
       cd ${BKP_STORAGE_DIR}
       #Apt-keys Backup
       AdvPrint "--- exporting apt-keys"
       apt-key exportall > apt_keys.key
       #Current installed DEB Packages"
       AdvPrint "--- generating a installed packages list"
-      dpkg --get-selections | awk '{print $1}' > installed_packages.txt
+      dpkg --list | awk '{print $2}' | grep -v ^linux >  installed_packages.txt
 
       echo "Backing Up Files"
-      tar cvfz ${BKP_FILENAME}_${DATE}.tar.gz ${FILE[@]} apt_keys.key installed_package 1> ./BACKUPED_FILES.txt
+      sudo tar cvfz ${BKP_FILENAME}_${DATE}.tar.gz ${FILE[@]} apt_keys.key installed_packages.txt 1> ./BACKUPED_FILES.txt
+      sudo chown -R $(whoami;) ${BKP_FILENAME}_${DATE}.tar.gz
       rm apt-keys.key installed_packages.txt
 
 
       ###### BACKUP DATABASE #####
       #... If DBNAMES was declared.... 
-      if [[ ! -z $DBNAMES ]]; then  
+      if [[ ! -z $DBNAMES ]]; then
                 AdvPrint "--- Backing Up Database"
                 mkdir -p ${BKP_STORAGE_DIR}/database
                 cd ${BKP_STORAGE_DIR}/database
@@ -95,15 +99,15 @@ backup_seq() {
                        #Start BD Backup
                               mkdir ${DBNAME};
                                cd ${DBNAME};
+                                #Dumping Grants
+                                /usr/bin/mysql -h ${DBHOST} -u${DBUSER} -p"${DBPASSWORD}" -B -N -e "SHOW GRANTS for ${DBNAME};" > ${DBNAME}_grants.sql;
                                #Backing up Tables
-                              TBS=`echo "show tables;" | /usr/bin/mysql -s -u${DBUSER} -p${DBPASSWORD} ${DBNAME}`
+                              TBS=`echo "show tables;" | /usr/bin/mysql -h ${DBHOST} -s -u${DBUSER} -p"${DBPASSWORD}" ${DBNAME}`
                                for TBNAME in $TBS; do
                                       AdvPrint "--- Backup ${DBNAME} [${TBNAME}]";
-                                       /usr/bin/mysqldump -eq -u${DBUSER} -p${DBPASSWORD} \
+                                       /usr/bin/mysqldump -h ${DBHOST} -eq -u${DBUSER} -p"${DBPASSWORD}" \
                                                ${DBNAME} ${TBNAME} > ${TBNAME}.sql ;
                                        done ;
-                              #Stores DB Grant Too
-                              mysql -u${DBUSER} -p${DBPASSWORD} -N -e "SHOW GRANTS FOR ${DBNAME};" > ${DBNAME}_grants.mysql
                               cd ..
                 #echo Compressing...
                 case $DBCOMPRESS in
@@ -120,20 +124,22 @@ backup_seq() {
                                '')
                                        #mv ${DBNAME}  ;
                                ;;
-                
+
                               *)
                                       #mv ${DBNAME} dbs/ ;
                                ;;
-                
-                       esac   
+
+                       esac
       done
       fi
 }
-      
+
 prune() {
       ### REMOVING OLD BACKUPFILES ###
       AdvPrint "--- Deleting Old BackupFiles";
-      cd ${BKP_STORAGE_DIR}
+      cd ${BKP_STORAGE_DIR}/../
+      #STORAGE_DIR=$(make_backup_dir Daily;)
+
       find . -mtime +${PRUNNING_PERIOD} -exec rm -vrf {} \;
       AdvPrint "--- Done"
       mail -s "Backup of $(hostname;)" ${MAILADM} < $LOGFILE
@@ -159,7 +165,7 @@ while getopts "dwm" parameter; do
             cd ${BKP_STORAGE_DIR}
 
             #Initializing backup
-            backup_seq            
+            backup_seq
             ;;
         m)
             #Create BackupDir
@@ -167,7 +173,7 @@ while getopts "dwm" parameter; do
             cd ${BKP_STORAGE_DIR}
 
             #Initializing backup
-            backup_seq            
+            backup_seq
             ;;
         *)
             usage
